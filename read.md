@@ -10,7 +10,7 @@ library(httr)
 library(stringr)
 library(XML)
 library(dplyr)
-
+library(RSQLite)
 
 ```
 
@@ -23,13 +23,7 @@ filelist <- list.files(envoirment)
 
 ```
 
-```{r}
 
-calendarfin <- data.frame()
-review <- data.frame()
-listing <- data.frame()
-
-```
 
 ```{r}
 
@@ -50,25 +44,40 @@ readcalendar <- function(filename){
 
 
 
+```{r}
+
+sqlite <- dbDriver("SQLite")
+con <- dbConnect(sqlite,"airbnb.db")
+
+```
+
 
 ```{r}
 
 for (i in 1:length(filelist)){
   if (str_detect(filelist[i],"calendar")){
     calendarnew <- readcalendar(filelist[i])
-    calendarfin <- rbind(calendarfin,calendarnew)
+    dbWriteTable(con,"calendars",calendarnew,append = TRUE)
   } 
   else if(str_detect(filelist[i],"listings")){
     datalist <- gzfile(paste0(envoirment,filelist[i]),"rt")
     onelisting <- read.csv(datalist)
-    listing <- rbind(listing,onelisting)
+    dbWriteTable(con,"listings",onelisting,append = TRUE)
+
   }
   else if(str_detect(filelist[i],"reviews")){
     datalist <- gzfile(paste0(envoirment,filelist[i]),"rt")
     onereview <- read.csv(datalist)
-    review <- rbind(review,onereview)
+    dbWriteTable(con,"reviews",onereview,append = TRUE)
   }
 }
 
 ```
 
+
+
+```{r}
+
+dbDisconnect(con)
+
+```
